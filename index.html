@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meteostanice</title>
+<meta name="description" content="Teploty a vlhkost z domácí meteostanice">
+<meta name="theme-color" content="#f9f9f7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Meteostanice">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --border: rgba(11, 11, 11, 0.10);
+    --good: #006300;
+    --warn: #8a5a00;
+    --s1: #2a78d6;
+    --s2: #eb6834;
+    --s3: #1baf7a;
+    --s4: #eda100;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #f0efec;
+      --ink2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --border: rgba(255, 255, 255, 0.10);
+      --good: #0ca30c;
+      --warn: #fab219;
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s3: #199e70;
+      --s4: #c98500;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #f0efec;
+    --ink2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.10);
+    --good: #0ca30c;
+    --warn: #fab219;
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #c98500;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.4;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  h1 { font-size: 20px; font-weight: 600; margin: 0; }
+  .sub { font-size: 13px; color: var(--ink2); margin-top: 2px; }
+  .hdr-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  button { font: inherit; color: inherit; cursor: pointer; }
+  .btn {
+    min-height: 40px; padding: 0 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    font-size: 13px; color: var(--ink2);
+  }
+  .btn:hover { color: var(--ink); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  button:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+
+  .banner {
+    display: none; margin: 0 0 12px; padding: 10px 12px; font-size: 13px;
+    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--warn);
+    border-radius: 10px; color: var(--ink);
+  }
+  .banner.show { display: block; }
+
+  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (min-width: 900px) { .cards { grid-template-columns: repeat(4, 1fr); } }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+    min-width: 0;
+  }
+  .card .name { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink2); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .temp { font-size: 34px; font-weight: 600; line-height: 1.1; margin-top: 8px; }
+  .temp small { font-size: 18px; font-weight: 500; color: var(--ink2); margin-left: 2px; }
+  .hum { font-size: 18px; color: var(--ink2); margin-top: 2px; }
+  .meta { font-size: 12px; color: var(--ink2); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--grid); }
+  .meta .age { display: block; margin-top: 2px; }
+  .age.stale { color: var(--warn); font-weight: 600; }
+  .card.stale .temp, .card.stale .hum { opacity: .6; }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
+    margin: 18px 0 12px;
+  }
+  .seg { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
+  .seg button {
+    min-height: 34px; padding: 0 14px; border: 0; border-radius: 8px; background: transparent;
+    font-size: 13px; color: var(--ink2);
+  }
+  .seg button[aria-selected="true"] { background: var(--page); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px; }
+  .legend button {
+    display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    font-size: 13px; color: var(--ink);
+  }
+  .legend button[aria-pressed="false"] { color: var(--muted); }
+  .legend button[aria-pressed="false"] .dot { background: transparent !important; border: 2px solid var(--muted); }
+
+  .charts { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 900px) { .charts { grid-template-columns: 1fr 1fr; } }
+  .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 14px 8px; min-width: 0; }
+  .chart-card h2 { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+  .plot { position: relative; width: 100%; }
+  .plot svg { display: block; width: 100%; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  .plot text { font-family: inherit; }
+  .empty { padding: 60px 0; text-align: center; font-size: 13px; color: var(--ink2); }
+  .tip {
+    position: absolute; top: 8px; display: none; pointer-events: none; z-index: 2;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 14px rgba(0, 0, 0, .12); min-width: 140px;
+  }
+  .tip .when { color: var(--ink2); margin-bottom: 4px; }
+  .tip .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 6px; align-items: center; line-height: 1.6; }
+  .tip .row b { font-weight: 600; }
+
+  details { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
+  summary { cursor: pointer; font-size: 14px; color: var(--ink2); min-height: 28px; }
+  .tablewrap { overflow-x: auto; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 600; color: var(--ink2); }
+  .note { font-size: 12px; color: var(--ink2); margin: 8px 0 2px; }
+
+  footer { margin: 18px 0 8px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  @media (forced-colors: active) {
+    .plot svg path { stroke: CanvasText; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Meteostanice</h1>
+      <div class="sub" id="status">Načítám data…</div>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn" id="themeBtn" type="button" aria-label="Přepnout vzhled">Vzhled: Auto</button>
+      <button class="btn" id="refreshBtn" type="button">Obnovit</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" role="status"></div>
+
+  <section class="cards" id="cards" aria-label="Aktuální hodnoty"></section>
+
+  <div class="toolbar">
+    <div class="seg" role="tablist" aria-label="Období" id="tabs"></div>
+    <div class="legend" id="legend" aria-label="Zobrazené místnosti"></div>
+  </div>
+
+  <section class="charts">
+    <div class="chart-card">
+      <h2>Teplota (°C)</h2>
+      <div class="plot" id="plotT"></div>
+    </div>
+    <div class="chart-card">
+      <h2>Vlhkost (%)</h2>
+      <div class="plot" id="plotH"></div>
+    </div>
+  </section>
+
+  <details id="tableBox">
+    <summary>Zobrazit jako tabulku</summary>
+    <div class="tablewrap">
+      <table id="table"></table>
+    </div>
+    <p class="note" id="tableNote"></p>
+  </details>
+
+  <footer>Data z ThingSpeak · kanál <span id="chId"></span></footer>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ===== NASTAVENÍ – tady se mění jen tohle ===== */
+  const CONFIG = {
+    channelId: '3530905',
+    readKey: 'BITGXAP38HB95JXI',   // pro veřejný kanál nech prázdné ''
+    refreshMs: 5 * 60 * 1000,        // automatické obnovení
+    freshMs: 20 * 60 * 1000          // starší než tohle = čidlo nevysílá
+  };
+
+  // pole v kanálu: field1/2 Pokoj, 3/4 Ložnice, 5/6 Obývák, 7/8 Venku (teplota/vlhkost)
+  const ROOMS = [
+    { id: 'pokoj',   name: 'Pokoj',   color: 'var(--s1)', t: 0, h: 1 },
+    { id: 'loznice', name: 'Ložnice', color: 'var(--s2)', t: 2, h: 3 },
+    { id: 'obyvak',  name: 'Obývák',  color: 'var(--s3)', t: 4, h: 5 },
+    { id: 'venku',   name: 'Venku',   color: 'var(--s4)', t: 6, h: 7 }
+  ];
+
+  const MIN = 60e3, HOUR = 3600e3, DAY = 86400e3;
+  const PERIODS = {
+    '24h': { label: '24 hodin', span: DAY,      step: 5 * MIN,  q: 'days=1&results=400' },
+    '7d':  { label: '7 dní',    span: 7 * DAY,  step: 30 * MIN, q: 'days=7&average=30&results=8000' },
+    '30d': { label: '30 dní',   span: 30 * DAY, step: 60 * MIN, q: 'days=30&average=60&results=8000' }
+  };
+
+  /* ===== pomocné ===== */
+  const $ = (s) => document.querySelector(s);
+  const nf1 = new Intl.NumberFormat('cs-CZ', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const nf0 = new Intl.NumberFormat('cs-CZ', { maximumFractionDigits: 0 });
+  const fmtT = (v) => (v == null ? '—' : nf1.format(v));
+  const fmtH = (v) => (v == null ? '—' : nf0.format(v));
+  const pad = (n) => String(n).padStart(2, '0');
+  const DOW = ['ne', 'po', 'út', 'st', 'čt', 'pá', 'so'];
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* nevadí */ } }
+  };
+
+  const state = {
+    period: PERIODS[store.get('ms.period', '24h')] ? store.get('ms.period', '24h') : '24h',
+    hidden: new Set((store.get('ms.hidden', []) || []).filter((id) => ROOMS.some((r) => r.id === id))),
+    theme: ['auto', 'light', 'dark'].includes(store.get('ms.theme', 'auto')) ? store.get('ms.theme', 'auto') : 'auto',
+    data: {},          // { '24h': [points], ... }
+    updated: null,     // čas poslední úspěšné aktualizace
+    fromCache: false,
+    loading: false,
+    error: null
+  };
+
+  /* ===== motiv ===== */
+  function applyTheme() {
+    const root = document.documentElement;
+    if (state.theme === 'auto') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', state.theme);
+    $('#themeBtn').textContent = 'Vzhled: ' + { auto: 'Auto', light: 'Světlý', dark: 'Tmavý' }[state.theme];
+    const meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--page').trim() || '#f9f9f7');
+  }
+
+  /* ===== načítání dat ===== */
+  function parse(feeds) {
+    const pts = feeds.map((f) => ({
+      t: Date.parse(f.created_at),
+      v: [1, 2, 3, 4, 5, 6, 7, 8].map((i) => {
+        const x = f['field' + i];
+        if (x == null || x === '') return null;
+        const n = parseFloat(x);
+        if (!isFinite(n)) return null;
+        // ochrana proti nesmyslným hodnotám
+        if (i % 2 === 1 && (n < -60 || n > 80)) return null;   // teplota
+        if (i % 2 === 0 && (n < 0 || n > 100)) return null;    // vlhkost
+        return n;
+      })
+    })).filter((p) => isFinite(p.t));
+    pts.sort((a, b) => a.t - b.t);
+    return pts;
+  }
+
+  async function fetchPeriod(key) {
+    const p = PERIODS[key];
+    const keyPart = CONFIG.readKey ? 'api_key=' + encodeURIComponent(CONFIG.readKey) + '&' : '';
+    const url = 'https://api.thingspeak.com/channels/' + CONFIG.channelId + '/feeds.json?' + keyPart + 'round=1&' + p.q;
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 20000);
+    try {
+      const r = await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+      if (!r.ok) throw new Error('Server vrátil chybu ' + r.status);
+      const j = await r.json();
+      if (!j || !Array.isArray(j.feeds)) throw new Error('Neplatná odpověď – zkontroluj Channel ID a Read API Key');
+      return parse(j.feeds);
+    } catch (e) {
+      if (e.name === 'AbortError') throw new Error('Server neodpověděl včas');
+      throw e;
+    } finally {
+      clearTimeout(to);
+    }
+  }
+
+  async function load(keys) {
+    const results = await Promise.allSettled(keys.map((k) => fetchPeriod(k).then((d) => [k, d])));
+    let ok = false, err = null;
+    results.forEach((r) => {
+      if (r.status === 'fulfilled') {
+        const [k, d] = r.value;
+        state.data[k] = d;
+        store.set('ms.cache.' + k, { t: Date.now(), pts: d });
+        ok = true;
+      } else {
+        err = r.reason;
+      }
+    });
+    return { ok, err };
+  }
+
+  async function refresh() {
+    if (state.loading) return;
+    state.loading = true;
+    $('#refreshBtn').disabled = true;
+    const keys = Array.from(new Set(['24h', state.period]));
+    const { ok, err } = await load(keys);
+    state.loading = false;
+    $('#refreshBtn').disabled = false;
+    if (ok) {
+      state.updated = Date.now();
+      state.fromCache = false;
+      state.error = err ? err.message : null;
+    } else {
+      state.error = (err && err.message) || 'Nepodařilo se načíst data';
+    }
+    render();
+  }
+
+  async function switchPeriod(key) {
+    state.period = key;
+    store.set('ms.period', key);
+    render();
+    if (!state.data[key] || state.fromCache) {
+      const { ok, err } = await load([key]);
+      if (!ok) state.error = (err && err.message) || 'Nepodařilo se načíst data';
+      else if (state.error) state.error = null;
+      render();
+    }
+  }
+
+  /* ===== výpočty ===== */
+  function latest(pts, idx) {
+    if (!pts) return null;
+    for (let i = pts.length - 1; i >= 0; i--) if (pts[i].v[idx] != null) return { t: pts[i].t, v: pts[i].v[idx] };
+    return null;
+  }
+  function range(pts, idx) {
+    if (!pts) return null;
+    let lo = Infinity, hi = -Infinity;
+    for (const p of pts) { const v = p.v[idx]; if (v != null) { if (v < lo) lo = v; if (v > hi) hi = v; } }
+    return lo === Infinity ? null : { lo, hi };
+  }
+  function fmtAge(ms) {
+    if (ms < MIN) return 'právě teď';
+    if (ms < HOUR) return 'před ' + Math.floor(ms / MIN) + ' min';
+    if (ms < DAY) return 'před ' + Math.floor(ms / HOUR) + ' h';
+    const d = Math.floor(ms / DAY);
+    return 'před ' + d + (d === 1 ? ' dnem' : ' dny');
+  }
+
+  /* ===== vykreslení: karty, legenda, tabulka ===== */
+  function renderCards() {
+    const live = state.data['24h'];
+    const per = state.data[state.period];
+    const now = Date.now();
+    $('#cards').innerHTML = ROOMS.map((r) => {
+      const T = latest(live, r.t), H = latest(live, r.h);
+      const lastT = Math.max(T ? T.t : 0, H ? H.t : 0);
+      const age = lastT ? now - lastT : null;
+      const stale = age == null || age > CONFIG.freshMs;
+      const rt = range(per, r.t), rh = range(per, r.h);
+      const mm = [];
+      if (rt) mm.push('teplota ' + fmtT(rt.lo) + ' až ' + fmtT(rt.hi) + ' °C');
+      if (rh) mm.push('vlhkost ' + fmtH(rh.lo) + ' až ' + fmtH(rh.hi) + ' %');
+      const ageTxt = age == null ? 'bez dat' : fmtAge(age);
+      return '<article class="card' + (stale ? ' stale' : '') + '">' +
+        '<div class="name"><span class="dot" style="background:' + r.color + '"></span>' + r.name + '</div>' +
+        '<div class="temp">' + fmtT(T && T.v) + '<small>°C</small></div>' +
+        '<div class="hum">' + fmtH(H && H.v) + ' % vlhkost</div>' +
+        '<div class="meta">' +
+          (mm.length ? 'Za ' + PERIODS[state.period].label.toLowerCase() + ': ' + mm.join(' · ') : '&nbsp;') +
+          '<span class="age' + (stale ? ' stale' : '') + '">' + (stale ? '⚠ ' : '') + ageTxt + '</span>' +
+        '</div></article>';
+    }).join('');
+  }
+
+  function renderToolbar() {
+    $('#tabs').innerHTML = Object.keys(PERIODS).map((k) =>
+      '<button type="button" role="tab" data-p="' + k + '" aria-selected="' + (k === state.period) + '">' + PERIODS[k].label + '</button>'
+    ).join('');
+    $('#legend').innerHTML = ROOMS.map((r) =>
+      '<button type="button" data-r="' + r.id + '" aria-pressed="' + (!state.hidden.has(r.id)) + '">' +
+      '<span class="dot" style="background:' + r.color + '"></span>' + r.name + '</button>'
+    ).join('');
+  }
+
+  function renderTable() {
+    const live = state.data['24h'], per = state.data[state.period];
+    let h = '<thead><tr><th>Místnost</th><th>Teplota teď</th><th>Vlhkost teď</th><th>Teplota min</th><th>Teplota max</th><th>Vlhkost min</th><th>Vlhkost max</th></tr></thead><tbody>';
+    ROOMS.forEach((r) => {
+      const T = latest(live, r.t), H = latest(live, r.h), rt = range(per, r.t), rh = range(per, r.h);
+      h += '<tr><td>' + r.name + '</td><td>' + fmtT(T && T.v) + ' °C</td><td>' + fmtH(H && H.v) + ' %</td>' +
+        '<td>' + fmtT(rt && rt.lo) + '</td><td>' + fmtT(rt && rt.hi) + '</td><td>' + fmtH(rh && rh.lo) + '</td><td>' + fmtH(rh && rh.hi) + '</td></tr>';
+    });
+    $('#table').innerHTML = h + '</tbody>';
+    $('#tableNote').textContent = 'Min a max za období: ' + PERIODS[state.period].label +
+      (state.period === '24h' ? '' : ' (počítáno z průměrů po ' + (PERIODS[state.period].step / MIN) + ' min)') + '.';
+  }
+
+  function renderStatus() {
+    const s = $('#status');
+    if (state.updated) {
+      const d = new Date(state.updated);
+      s.textContent = 'Aktualizováno ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    } else if (state.fromCache) {
+      s.textContent = 'Zobrazuji uložená data…';
+    } else {
+      s.textContent = 'Načítám data…';
+    }
+    const b = $('#banner');
+    if (state.error) {
+      b.textContent = 'Nepodařilo se obnovit data: ' + state.error + (Object.keys(state.data).length ? ' – zobrazuji poslední načtená.' : '.');
+      b.classList.add('show');
+    } else {
+      b.classList.remove('show');
+    }
+  }
+
+  /* ===== grafy ===== */
+  const hideFns = [];
+
+  function niceTicks(lo, hi, n) {
+    let range = hi - lo;
+    if (range <= 0) range = Math.max(Math.abs(hi) * 0.1, 1);
+    const raw = range / (n - 1);
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    const f = raw / mag;
+    const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
+    const start = Math.floor(lo / step + 1e-9) * step;
+    const end = Math.ceil(hi / step - 1e-9) * step;
+    const out = [];
+    for (let v = start; v <= end + step / 2; v += step) out.push(Math.round(v * 1000) / 1000);
+    return out;
+  }
+
+  function timeTicks(t0, t1, key, narrow) {
+    const out = [];
+    const d = new Date(t0);
+    if (key === '24h') {
+      const stepH = narrow ? 6 : 4;
+      d.setMinutes(0, 0, 0);
+      while (d.getHours() % stepH !== 0 || d.getTime() < t0) d.setHours(d.getHours() + 1);
+      for (; d.getTime() <= t1; d.setHours(d.getHours() + stepH)) out.push({ t: d.getTime(), label: pad(d.getHours()) + ':00' });
+    } else {
+      d.setHours(0, 0, 0, 0);
+      if (d.getTime() < t0) d.setDate(d.getDate() + 1);
+      const stepD = key === '7d' ? (narrow ? 2 : 1) : (narrow ? 7 : 5);
+      for (; d.getTime() <= t1; d.setDate(d.getDate() + stepD)) {
+        const label = key === '7d'
+          ? (narrow ? DOW[d.getDay()] + ' ' + d.getDate() + '.' : DOW[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '.')
+          : d.getDate() + '.' + (d.getMonth() + 1) + '.';
+        out.push({ t: d.getTime(), label });
+      }
+    }
+    return out;
+  }
+
+  function fmtWhen(t) {
+    const d = new Date(t);
+    return DOW[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+  function drawChart(host, kind) {
+    const pts = state.data[state.period];
+    const per = PERIODS[state.period];
+    const W = Math.floor(host.clientWidth);
+    if (!W) return;
+    if (!pts) { host.innerHTML = '<div class="empty">Načítám…</div>'; return; }
+
+    const isT = kind === 't';
+    const idxOf = (r) => (isT ? r.t : r.h);
+    const vis = ROOMS.filter((r) => !state.hidden.has(r.id));
+    const fmt = isT ? fmtT : fmtH;
+    const unit = isT ? ' °C' : ' %';
+    const H = W < 480 ? 220 : 260;
+    const m = { l: 40, r: 14, t: 10, b: 26 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const t1 = Date.now(), t0 = t1 - per.span;
+
+    // rozsah osy Y
+    let lo = Infinity, hi = -Infinity;
+    for (const p of pts) {
+      if (p.t < t0) continue;
+      for (const r of vis) { const v = p.v[idxOf(r)]; if (v != null) { if (v < lo) lo = v; if (v > hi) hi = v; } }
+    }
+    if (lo === Infinity) { host.innerHTML = '<div class="empty">V tomto období nejsou žádná data.</div>'; return; }
+    const padY = Math.max((hi - lo) * 0.08, isT ? 0.5 : 2);
+    lo -= padY; hi += padY;
+    if (!isT) { lo = Math.max(lo, 0); hi = Math.min(hi, 100); }
+    let ticks = niceTicks(lo, hi, 5);
+    if (!isT) { const f = ticks.filter((v) => v >= 0 && v <= 100); if (f.length >= 2) ticks = f; }
+    const y0 = ticks[0], y1 = ticks[ticks.length - 1];
+    const X = (t) => m.l + ((t - t0) / (t1 - t0)) * iw;
+    const Y = (v) => m.t + ih - ((v - y0) / (y1 - y0)) * ih;
+
+    let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
+      (isT ? 'Graf teploty' : 'Graf vlhkosti') + ' za ' + per.label + '. Hodnoty jsou také v tabulce pod grafy.">';
+
+    // mřížka + popisky osy Y
+    ticks.forEach((v) => {
+      const y = Y(v);
+      svg += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '" style="stroke:' + (v === y0 ? 'var(--axis)' : 'var(--grid)') + '" stroke-width="1"/>';
+      svg += '<text x="' + (m.l - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" style="fill:var(--muted)">' + fmt(v) + '</text>';
+    });
+    // osa X
+    timeTicks(t0, t1, state.period, W < 480).forEach((tk) => {
+      const x = X(tk.t);
+      svg += '<line x1="' + x + '" x2="' + x + '" y1="' + (m.t + ih) + '" y2="' + (m.t + ih + 4) + '" style="stroke:var(--axis)" stroke-width="1"/>';
+      svg += '<text x="' + x + '" y="' + (H - 6) + '" text-anchor="middle" font-size="11" style="fill:var(--muted)">' + tk.label + '</text>';
+    });
+
+    // čáry (s přerušením při výpadku dat)
+    const gap = per.step * 4.5;
+    vis.forEach((r) => {
+      const idx = idxOf(r);
+      const segs = [];
+      let cur = null, prevT = null;
+      for (const p of pts) {
+        const v = p.v[idx];
+        if (v == null || p.t < t0) continue;
+        if (cur && prevT != null && p.t - prevT <= gap) cur.push([p.t, v]);
+        else { cur = [[p.t, v]]; segs.push(cur); }
+        prevT = p.t;
+      }
+      segs.forEach((s) => {
+        if (s.length === 1) {
+          svg += '<circle cx="' + X(s[0][0]) + '" cy="' + Y(s[0][1]) + '" r="2.5" style="fill:' + r.color + '"/>';
+        } else {
+          let d = '';
+          s.forEach((q, i) => { d += (i ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); });
+          svg += '<path d="' + d + '" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:' + r.color + '"/>';
+        }
+      });
+    });
+
+    svg += '<g class="hv"></g>';
+    svg += '<rect class="hit" x="' + m.l + '" y="' + m.t + '" width="' + iw + '" height="' + ih + '" fill="transparent"/>';
+    svg += '</svg><div class="tip"></div>';
+    host.innerHTML = svg;
+
+    // hover / dotyk
+    const svgEl = host.querySelector('svg');
+    const hv = host.querySelector('.hv');
+    const tip = host.querySelector('.tip');
+    const hit = host.querySelector('.hit');
+    const ts = pts.map((p) => p.t);
+
+    function nearest(t) {
+      let a = 0, b = ts.length - 1;
+      while (a < b) { const mid = (a + b) >> 1; if (ts[mid] < t) a = mid + 1; else b = mid; }
+      if (a > 0 && Math.abs(ts[a - 1] - t) < Math.abs(ts[a] - t)) a--;
+      return a;
+    }
+    function hide() { hv.innerHTML = ''; tip.style.display = 'none'; }
+    hideFns.push(hide);
+
+    function show(ev) {
+      const rect = svgEl.getBoundingClientRect();
+      const px = ev.clientX - rect.left;
+      const t = t0 + ((px - m.l) / iw) * (t1 - t0);
+      if (!ts.length) return hide();
+      const i = nearest(t);
+      const p = pts[i];
+      if (Math.abs(p.t - t) > per.step * 2) return hide();
+      const x = X(p.t);
+      let g = '<line x1="' + x + '" x2="' + x + '" y1="' + m.t + '" y2="' + (m.t + ih) + '" style="stroke:var(--axis)" stroke-width="1"/>';
+      let rows = '';
+      vis.forEach((r) => {
+        const v = p.v[idxOf(r)];
+        if (v != null) g += '<circle cx="' + x + '" cy="' + Y(v) + '" r="4" stroke-width="2" style="fill:' + r.color + ';stroke:var(--surface)"/>';
+        rows += '<div class="row"><span class="dot" style="background:' + r.color + '"></span><span>' + r.name + '</span><b>' + (v == null ? '—' : fmt(v) + unit) + '</b></div>';
+      });
+      hv.innerHTML = g;
+      tip.innerHTML = '<div class="when">' + fmtWhen(p.t) + '</div>' + rows;
+      tip.style.display = 'block';
+      const tw = tip.offsetWidth;
+      let left = x + 14;
+      if (left + tw > W - 4) left = x - 14 - tw;
+      tip.style.left = Math.max(4, left) + 'px';
+    }
+    hit.addEventListener('pointermove', show);
+    hit.addEventListener('pointerdown', show);
+    hit.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse') hide(); });
+  }
+
+  function renderCharts() {
+    hideFns.length = 0;
+    drawChart($('#plotT'), 't');
+    drawChart($('#plotH'), 'h');
+  }
+
+  function render() {
+    renderStatus();
+    renderToolbar();
+    renderCards();
+    renderCharts();
+    renderTable();
+  }
+
+  /* ===== události ===== */
+  $('#tabs').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-p]');
+    if (b && b.dataset.p !== state.period) switchPeriod(b.dataset.p);
+  });
+  $('#legend').addEventListener('click', (e) => {
+    const b = e.target.closest('button[data-r]');
+    if (!b) return;
+    const id = b.dataset.r;
+    if (state.hidden.has(id)) state.hidden.delete(id);
+    else if (ROOMS.length - state.hidden.size > 1) state.hidden.add(id);   // aspoň jedna musí zůstat
+    store.set('ms.hidden', Array.from(state.hidden));
+    renderToolbar();
+    renderCharts();
+  });
+  $('#refreshBtn').addEventListener('click', refresh);
+  $('#themeBtn').addEventListener('click', () => {
+    const order = ['auto', 'light', 'dark'];
+    state.theme = order[(order.indexOf(state.theme) + 1) % order.length];
+    store.set('ms.theme', state.theme);
+    applyTheme();
+  });
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyTheme);
+  document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.plot')) hideFns.forEach((f) => f()); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && (!state.updated || Date.now() - state.updated > MIN)) refresh();
+    renderCards();
+  });
+
+  let raf = 0;
+  new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderCharts); }).observe($('.charts'));
+
+  setInterval(refresh, CONFIG.refreshMs);
+  setInterval(renderCards, 30 * 1000);   // aktualizace „před X min“
+
+  /* ===== start ===== */
+  $('#chId').textContent = CONFIG.channelId;
+  applyTheme();
+  ['24h', state.period].forEach((k) => {
+    const c = store.get('ms.cache.' + k, null);
+    if (c && Array.isArray(c.pts)) { state.data[k] = c.pts; state.fromCache = true; state.updated = c.t; }
+  });
+  render();
+  refresh();
+
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Meteostanice</title>
-<meta name="description" content="Teploty a vlhkost z domácí meteostanice">
+<meta name="description" content="Teploty a vlhkost z domácí meteostanice na půdorysu bytu">
 <meta name="theme-color" content="#f9f9f7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -24,12 +24,21 @@
     --grid: #e1e0d9;
     --axis: #c3c2b7;
     --border: rgba(11, 11, 11, 0.10);
-    --good: #006300;
     --warn: #8a5a00;
     --s1: #2a78d6;
     --s2: #eb6834;
     --s3: #1baf7a;
     --s4: #eda100;
+    /* půdorys */
+    --floor: #f3f2ee;
+    --balcony: #e7ebe4;
+    --wall: #3d3c39;
+    --win: #8fc1ee;
+    --door: #b98a5e;
+    --counter: #c29878;
+    --counter-line: #8d6548;
+    --pill: #ffffff;
+    --g0: #bed6f2; --g1: #dae8f3; --g2: #f1f0ea; --g3: #fae2cd; --g4: #f7c8aa;
   }
   @media (prefers-color-scheme: dark) {
     :root:where(:not([data-theme="light"])) {
@@ -42,12 +51,20 @@
       --grid: #2c2c2a;
       --axis: #383835;
       --border: rgba(255, 255, 255, 0.10);
-      --good: #0ca30c;
       --warn: #fab219;
       --s1: #3987e5;
       --s2: #d95926;
       --s3: #199e70;
       --s4: #c98500;
+      --floor: #262625;
+      --balcony: #2b2d2a;
+      --wall: #a9a79f;
+      --win: #4a86c8;
+      --door: #a07a52;
+      --counter: #7c5b46;
+      --counter-line: #a1795f;
+      --pill: #2a2a29;
+      --g0: #26425f; --g1: #283848; --g2: #2a2a28; --g3: #4a3628; --g4: #663e26;
     }
   }
   :root[data-theme="dark"] {
@@ -60,12 +77,20 @@
     --grid: #2c2c2a;
     --axis: #383835;
     --border: rgba(255, 255, 255, 0.10);
-    --good: #0ca30c;
     --warn: #fab219;
     --s1: #3987e5;
     --s2: #d95926;
     --s3: #199e70;
     --s4: #c98500;
+    --floor: #262625;
+    --balcony: #2b2d2a;
+    --wall: #a9a79f;
+    --win: #4a86c8;
+    --door: #a07a52;
+    --counter: #7c5b46;
+    --counter-line: #a1795f;
+    --pill: #2a2a29;
+    --g0: #26425f; --g1: #283848; --g2: #2a2a28; --g3: #4a3628; --g4: #663e26;
   }
 
   * { box-sizing: border-box; }
@@ -78,9 +103,9 @@
     line-height: 1.4;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 16px; }
 
-  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
   h1 { font-size: 20px; font-weight: 600; margin: 0; }
   .sub { font-size: 13px; color: var(--ink2); margin-top: 2px; }
   .hdr-actions { display: flex; gap: 8px; flex-shrink: 0; }
@@ -102,25 +127,45 @@
   }
   .banner.show { display: block; }
 
-  .cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-  @media (min-width: 900px) { .cards { grid-template-columns: repeat(4, 1fr); } }
-  .card {
-    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
-    min-width: 0;
+  .layout { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  @media (min-width: 1000px) {
+    .layout { grid-template-columns: minmax(400px, 500px) 1fr; align-items: start; }
+    .plan-card { position: sticky; top: 12px; }
   }
-  .card .name { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink2); }
-  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-  .temp { font-size: 34px; font-weight: 600; line-height: 1.1; margin-top: 8px; }
-  .temp small { font-size: 18px; font-weight: 500; color: var(--ink2); margin-left: 2px; }
-  .hum { font-size: 18px; color: var(--ink2); margin-top: 2px; }
-  .meta { font-size: 12px; color: var(--ink2); margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--grid); }
-  .meta .age { display: block; margin-top: 2px; }
-  .age.stale { color: var(--warn); font-weight: 600; }
-  .card.stale .temp, .card.stale .hum { opacity: .6; }
 
+  /* ---------- půdorys ---------- */
+  .plan-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 6px 6px 12px; min-width: 0; }
+  #plan svg { display: block; width: 100%; height: auto; }
+  #plan text { font-family: inherit; }
+  #plan [data-r] { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+  #plan g[data-r]:focus { outline: none; }
+  #plan .focusring { fill: none; stroke: none; }
+  #plan g[data-r]:focus-visible .focusring { stroke: var(--s1); stroke-width: 3; }
+  #plan .floor[data-r]:hover { stroke: var(--s1); stroke-width: 2; }
+  .wallg rect { fill: var(--wall); }
+  .win { fill: var(--win); }
+  .winline { stroke: rgba(255, 255, 255, .85); stroke-width: 1.6; }
+  .door { stroke: var(--door); stroke-width: 3.5; stroke-linecap: round; }
+  .lbl { font-size: 24px; font-weight: 600; fill: var(--ink2); }
+  .lbl.sm { font-size: 20px; font-weight: 500; }
+  .stale-t { fill: var(--warn); font-weight: 700; font-size: 19px; }
+  .dev { filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .22)); }
+  .dev.stale { opacity: .5; }
+  .pill { fill: var(--pill); stroke: var(--border); stroke-width: 1.5; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .15)); }
+  .pill-t { font-size: 36px; font-weight: 650; fill: var(--ink); }
+  .pill-u { font-size: 16px; font-weight: 500; fill: var(--ink2); }
+  .pill-h { font-size: 24px; font-weight: 600; fill: var(--ink2); }
+  .pill-l { font-size: 20px; font-weight: 600; fill: var(--ink2); }
+  .pill.stale ~ text, .pill-g.stale text.pill-t, .pill-g.stale text.pill-h { opacity: .55; }
+
+  .scale { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 8px; font-size: 12px; color: var(--ink2); }
+  .grad { display: block; width: 140px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--g0), var(--g1), var(--g2), var(--g3), var(--g4)); border: 1px solid var(--border); }
+  .hint { text-align: center; font-size: 12px; color: var(--muted); margin: 6px 0 0; }
+
+  /* ---------- grafy ---------- */
   .toolbar {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px;
-    margin: 18px 0 12px;
+    margin: 0 0 12px;
   }
   .seg { display: inline-flex; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; }
   .seg button {
@@ -128,6 +173,7 @@
     font-size: 13px; color: var(--ink2);
   }
   .seg button[aria-selected="true"] { background: var(--page); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--border); }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
   .legend { display: flex; flex-wrap: wrap; gap: 6px; }
   .legend button {
     display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 0 12px;
@@ -138,9 +184,8 @@
   .legend button[aria-pressed="false"] .dot { background: transparent !important; border: 2px solid var(--muted); }
 
   .charts { display: grid; grid-template-columns: 1fr; gap: 12px; }
-  @media (min-width: 900px) { .charts { grid-template-columns: 1fr 1fr; } }
   .chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 14px 8px; min-width: 0; }
-  .chart-card h2 { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
+  .chart-card h2, .chart-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 6px; }
   .plot { position: relative; width: 100%; }
   .plot svg { display: block; width: 100%; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
   .plot text { font-family: inherit; }
@@ -154,7 +199,7 @@
   .tip .row { display: grid; grid-template-columns: 10px 1fr auto; gap: 6px; align-items: center; line-height: 1.6; }
   .tip .row b { font-weight: 600; }
 
-  details { margin-top: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
+  details { margin-top: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; }
   summary { cursor: pointer; font-size: 14px; color: var(--ink2); min-height: 28px; }
   .tablewrap { overflow-x: auto; margin-top: 8px; }
   table { border-collapse: collapse; width: 100%; font-size: 13px; font-variant-numeric: tabular-nums; }
@@ -162,8 +207,30 @@
   th:first-child, td:first-child { text-align: left; }
   th { font-weight: 600; color: var(--ink2); }
   .note { font-size: 12px; color: var(--ink2); margin: 8px 0 2px; }
-
   footer { margin: 18px 0 8px; font-size: 12px; color: var(--muted); text-align: center; }
+
+  /* ---------- detail místnosti ---------- */
+  .sheet { position: fixed; inset: 0; z-index: 30; }
+  .backdrop { position: absolute; inset: 0; background: rgba(0, 0, 0, .38); }
+  .panel {
+    position: absolute; left: 0; right: 0; bottom: 0; max-height: 90vh; overflow-y: auto;
+    background: var(--page); border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, .25);
+  }
+  @media (min-width: 700px) {
+    .panel { left: 50%; transform: translateX(-50%); width: 640px; bottom: auto; top: 6vh; max-height: 88vh; border-radius: 18px; }
+  }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+  .sheet-head .ttl { display: flex; align-items: center; gap: 10px; }
+  .sheet-head h2 { font-size: 20px; margin: 0; font-weight: 600; }
+  .now { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 4px 0 12px; }
+  .now .big { font-size: 40px; font-weight: 600; line-height: 1.1; }
+  .now .big small { font-size: 20px; font-weight: 500; color: var(--ink2); margin-left: 2px; }
+  .now .hum { font-size: 22px; color: var(--ink2); }
+  .now .age { width: 100%; font-size: 13px; color: var(--ink2); }
+  .now .age.stale { color: var(--warn); font-weight: 600; }
+  .panel .seg { margin-bottom: 12px; }
+  .panel .chart-card { margin-bottom: 12px; }
 
   @media (forced-colors: active) {
     .plot svg path { stroke: CanvasText; }
@@ -185,33 +252,62 @@
 
   <div class="banner" id="banner" role="status"></div>
 
-  <section class="cards" id="cards" aria-label="Aktuální hodnoty"></section>
+  <main class="layout">
+    <section class="plan-card" aria-label="Půdorys bytu">
+      <div id="plan"></div>
+      <div class="scale" aria-hidden="true"><span>12 °C</span><i class="grad"></i><span>29 °C</span></div>
+      <p class="hint">Klepni na čidlo nebo místnost pro podrobnosti a grafy.</p>
+    </section>
 
-  <div class="toolbar">
-    <div class="seg" role="tablist" aria-label="Období" id="tabs"></div>
-    <div class="legend" id="legend" aria-label="Zobrazené místnosti"></div>
-  </div>
+    <section class="data">
+      <div class="toolbar">
+        <div class="seg" role="tablist" aria-label="Období" id="tabs"></div>
+        <div class="legend" id="legend" aria-label="Zobrazené místnosti"></div>
+      </div>
 
-  <section class="charts">
-    <div class="chart-card">
-      <h2>Teplota (°C)</h2>
-      <div class="plot" id="plotT"></div>
-    </div>
-    <div class="chart-card">
-      <h2>Vlhkost (%)</h2>
-      <div class="plot" id="plotH"></div>
-    </div>
-  </section>
+      <div class="charts">
+        <div class="chart-card">
+          <h2>Teplota (°C)</h2>
+          <div class="plot" id="plotT"></div>
+        </div>
+        <div class="chart-card">
+          <h2>Vlhkost (%)</h2>
+          <div class="plot" id="plotH"></div>
+        </div>
+      </div>
 
-  <details id="tableBox">
-    <summary>Zobrazit jako tabulku</summary>
-    <div class="tablewrap">
-      <table id="table"></table>
-    </div>
-    <p class="note" id="tableNote"></p>
-  </details>
+      <details id="tableBox">
+        <summary>Zobrazit jako tabulku</summary>
+        <div class="tablewrap">
+          <table id="table"></table>
+        </div>
+        <p class="note" id="tableNote"></p>
+      </details>
+    </section>
+  </main>
 
   <footer>Data z ThingSpeak · kanál <span id="chId"></span></footer>
+</div>
+
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" hidden>
+  <div class="backdrop" id="sheetBackdrop"></div>
+  <div class="panel">
+    <div class="sheet-head">
+      <div class="ttl"><span class="dot" id="sheetDot"></span><h2 id="sheetTitle"></h2></div>
+      <button class="btn" id="sheetClose" type="button">Zavřít</button>
+    </div>
+    <div class="now" id="sheetNow"></div>
+    <div class="seg" role="tablist" aria-label="Období" id="sheetTabs"></div>
+    <div class="chart-card">
+      <h3>Teplota (°C)</h3>
+      <div class="plot" id="sheetPlotT"></div>
+    </div>
+    <div class="chart-card">
+      <h3>Vlhkost (%)</h3>
+      <div class="plot" id="sheetPlotH"></div>
+    </div>
+    <p class="note" id="sheetNote"></p>
+  </div>
 </div>
 
 <script>
@@ -233,6 +329,7 @@
     { id: 'obyvak',  name: 'Obývák',  color: 'var(--s3)', t: 4, h: 5 },
     { id: 'venku',   name: 'Venku',   color: 'var(--s4)', t: 6, h: 7 }
   ];
+  const ROOM_BY_ID = Object.fromEntries(ROOMS.map((r) => [r.id, r]));
 
   const MIN = 60e3, HOUR = 3600e3, DAY = 86400e3;
   const PERIODS = {
@@ -257,16 +354,23 @@
 
   const state = {
     period: PERIODS[store.get('ms.period', '24h')] ? store.get('ms.period', '24h') : '24h',
-    hidden: new Set((store.get('ms.hidden', []) || []).filter((id) => ROOMS.some((r) => r.id === id))),
+    hidden: new Set((store.get('ms.hidden', []) || []).filter((id) => ROOM_BY_ID[id])),
     theme: ['auto', 'light', 'dark'].includes(store.get('ms.theme', 'auto')) ? store.get('ms.theme', 'auto') : 'auto',
-    data: {},          // { '24h': [points], ... }
-    updated: null,     // čas poslední úspěšné aktualizace
+    data: {},
+    updated: null,
     fromCache: false,
     loading: false,
-    error: null
+    error: null,
+    sheet: null
   };
 
-  /* ===== motiv ===== */
+  function isDark() {
+    const t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return true;
+    if (t === 'light') return false;
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+
   function applyTheme() {
     const root = document.documentElement;
     if (state.theme === 'auto') root.removeAttribute('data-theme');
@@ -274,6 +378,9 @@
     $('#themeBtn').textContent = 'Vzhled: ' + { auto: 'Auto', light: 'Světlý', dark: 'Tmavý' }[state.theme];
     const meta = document.querySelector('meta[name="theme-color"]');
     if (meta) meta.setAttribute('content', getComputedStyle(root).getPropertyValue('--page').trim() || '#f9f9f7');
+    lastPlan = '';
+    renderPlan();
+    renderCharts();
   }
 
   /* ===== načítání dat ===== */
@@ -285,7 +392,6 @@
         if (x == null || x === '') return null;
         const n = parseFloat(x);
         if (!isFinite(n)) return null;
-        // ochrana proti nesmyslným hodnotám
         if (i % 2 === 1 && (n < -60 || n > 80)) return null;   // teplota
         if (i % 2 === 0 && (n < 0 || n > 100)) return null;    // vlhkost
         return n;
@@ -380,37 +486,249 @@
     const d = Math.floor(ms / DAY);
     return 'před ' + d + (d === 1 ? ' dnem' : ' dny');
   }
-
-  /* ===== vykreslení: karty, legenda, tabulka ===== */
-  function renderCards() {
+  function fmtAgeShort(ms) {
+    if (ms == null) return 'bez dat';
+    if (ms < HOUR) return Math.max(1, Math.floor(ms / MIN)) + ' min';
+    if (ms < DAY) return Math.floor(ms / HOUR) + ' h';
+    return Math.floor(ms / DAY) + ' d';
+  }
+  function roomNow(r) {
     const live = state.data['24h'];
-    const per = state.data[state.period];
-    const now = Date.now();
-    $('#cards').innerHTML = ROOMS.map((r) => {
-      const T = latest(live, r.t), H = latest(live, r.h);
-      const lastT = Math.max(T ? T.t : 0, H ? H.t : 0);
-      const age = lastT ? now - lastT : null;
-      const stale = age == null || age > CONFIG.freshMs;
-      const rt = range(per, r.t), rh = range(per, r.h);
-      const mm = [];
-      if (rt) mm.push('teplota ' + fmtT(rt.lo) + ' až ' + fmtT(rt.hi) + ' °C');
-      if (rh) mm.push('vlhkost ' + fmtH(rh.lo) + ' až ' + fmtH(rh.hi) + ' %');
-      const ageTxt = age == null ? 'bez dat' : fmtAge(age);
-      return '<article class="card' + (stale ? ' stale' : '') + '">' +
-        '<div class="name"><span class="dot" style="background:' + r.color + '"></span>' + r.name + '</div>' +
-        '<div class="temp">' + fmtT(T && T.v) + '<small>°C</small></div>' +
-        '<div class="hum">' + fmtH(H && H.v) + ' % vlhkost</div>' +
-        '<div class="meta">' +
-          (mm.length ? 'Za ' + PERIODS[state.period].label.toLowerCase() + ': ' + mm.join(' · ') : '&nbsp;') +
-          '<span class="age' + (stale ? ' stale' : '') + '">' + (stale ? '⚠ ' : '') + ageTxt + '</span>' +
-        '</div></article>';
-    }).join('');
+    if (!live) return { t: null, h: null, age: null, stale: false, loading: true };
+    const T = latest(live, r.t), H = latest(live, r.h);
+    const ts = Math.max(T ? T.t : 0, H ? H.t : 0);
+    const age = ts ? Date.now() - ts : null;
+    return { t: T ? T.v : null, h: H ? H.v : null, age, stale: age == null || age > CONFIG.freshMs, loading: false };
   }
 
-  function renderToolbar() {
-    $('#tabs').innerHTML = Object.keys(PERIODS).map((k) =>
+  /* ===== půdorys ===== */
+  // Všechny souřadnice vycházejí z načrtnutého půdorysu (sever nahoře, západ vlevo).
+  const FLOORS = [
+    { d: 'M90 46H158V243H90Z', balcony: true },
+    { d: 'M158 46H416V243H158Z', room: 'obyvak' },
+    { d: 'M416 46H724V243H416Z', room: 'pokoj' },
+    { d: 'M257 243H684V327H498V477H257Z' },          // jídelna + volný prostor u kuchyně
+    { d: 'M498 363H724V477H498Z' },                  // koupelna + WC
+    { d: 'M339 477H498V743H339Z' },                  // chodba
+    { d: 'M498 477H724V743H498Z', room: 'loznice' }
+  ];
+  const COUNTER = 'M500 327H684V243H724V363H500Z';
+  // o: směr zdi (h/v), p: poloha, a–b: rozsah, t: tloušťka, gaps: dveře, wins: okna
+  const WALLS = [
+    { o: 'h', p: 46,  a: 158, b: 724, t: 8, wins: [[305, 398]] },
+    { o: 'h', p: 46,  a: 90,  b: 158, t: 4 },
+    { o: 'h', p: 243, a: 90,  b: 158, t: 4 },
+    { o: 'h', p: 243, a: 158, b: 257, t: 8 },
+    { o: 'h', p: 243, a: 257, b: 724, t: 5, gaps: [[320, 380], [435, 490]] },
+    { o: 'h', p: 363, a: 498, b: 724, t: 5 },
+    { o: 'h', p: 477, a: 257, b: 339, t: 8 },
+    { o: 'h', p: 477, a: 339, b: 724, t: 5, gaps: [[380, 468]] },
+    { o: 'h', p: 743, a: 339, b: 724, t: 8, gaps: [[386, 462]] },
+    { o: 'v', p: 90,  a: 46,  b: 243, t: 4 },
+    { o: 'v', p: 158, a: 46,  b: 243, t: 6, gaps: [[170, 218]], wins: [[85, 158]] },
+    { o: 'v', p: 416, a: 46,  b: 243, t: 5 },
+    { o: 'v', p: 724, a: 46,  b: 743, t: 8, wins: [[110, 203], [272, 330], [400, 457], [520, 655]] },
+    { o: 'v', p: 257, a: 243, b: 477, t: 8 },
+    { o: 'v', p: 339, a: 477, b: 743, t: 8 },
+    { o: 'v', p: 498, a: 327, b: 743, t: 5, gaps: [[595, 662]] }
+  ];
+
+  function wallParts(w) {
+    const { o, p, a, b, t } = w;
+    const gaps = w.gaps || [], wins = w.wins || [];
+    const cuts = [a];
+    gaps.forEach((g) => cuts.push(g[0], g[1]));
+    cuts.push(b);
+    let rects = '', wn = '', dr = '';
+    for (let i = 0; i < cuts.length; i += 2) {
+      const s0 = cuts[i], s1 = cuts[i + 1];
+      if (s1 <= s0) continue;
+      const e0 = s0 === a ? t / 2 : 0, e1 = s1 === b ? t / 2 : 0;
+      rects += o === 'h'
+        ? '<rect x="' + (s0 - e0) + '" y="' + (p - t / 2) + '" width="' + (s1 - s0 + e0 + e1) + '" height="' + t + '"/>'
+        : '<rect x="' + (p - t / 2) + '" y="' + (s0 - e0) + '" width="' + t + '" height="' + (s1 - s0 + e0 + e1) + '"/>';
+    }
+    wins.forEach((q) => {
+      wn += o === 'h'
+        ? '<rect class="win" x="' + q[0] + '" y="' + (p - t / 2) + '" width="' + (q[1] - q[0]) + '" height="' + t + '"/><line class="winline" x1="' + q[0] + '" x2="' + q[1] + '" y1="' + p + '" y2="' + p + '"/>'
+        : '<rect class="win" x="' + (p - t / 2) + '" y="' + q[0] + '" width="' + t + '" height="' + (q[1] - q[0]) + '"/><line class="winline" x1="' + p + '" x2="' + p + '" y1="' + q[0] + '" y2="' + q[1] + '"/>';
+    });
+    gaps.forEach((q) => {
+      dr += o === 'h'
+        ? '<line class="door" x1="' + (q[0] + 2) + '" x2="' + (q[1] - 2) + '" y1="' + p + '" y2="' + p + '"/>'
+        : '<line class="door" x1="' + p + '" x2="' + p + '" y1="' + (q[0] + 2) + '" y2="' + (q[1] - 2) + '"/>';
+    });
+    return { rects, wn, dr };
+  }
+
+  // barva místnosti podle teploty
+  const FILL_STOPS = {
+    light: [[12, [190, 214, 242]], [18, [218, 232, 243]], [21.5, [241, 240, 234]], [25, [250, 226, 205]], [29, [247, 200, 170]]],
+    dark:  [[12, [38, 66, 102]], [18, [40, 56, 72]], [21.5, [42, 42, 40]], [25, [74, 54, 40]], [29, [102, 62, 38]]]
+  };
+  const rgb = (c) => 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+  function tempFill(t, neutral) {
+    const dark = isDark();
+    if (t == null || neutral) return dark ? 'rgb(38,38,37)' : 'rgb(238,237,233)';
+    const st = FILL_STOPS[dark ? 'dark' : 'light'];
+    if (t <= st[0][0]) return rgb(st[0][1]);
+    for (let i = 1; i < st.length; i++) {
+      if (t <= st[i][0]) {
+        const t0 = st[i - 1][0], c0 = st[i - 1][1], t1 = st[i][0], c1 = st[i][1];
+        const k = (t - t0) / (t1 - t0);
+        return rgb(c0.map((v, j) => Math.round(v + (c1[j] - v) * k)));
+      }
+    }
+    return rgb(st[st.length - 1][1]);
+  }
+
+  // jednoduchý LCD teploměr (obecný vzhled, bez značek)
+  const DIG = '#20231c', LCDBG = '#d9dfd0';
+  function mood(t, h) {
+    if (t == null || h == null) return null;
+    if (t < 17 || t > 28 || h < 30 || h > 75) return -1;
+    if (t >= 20 && t <= 25.5 && h >= 40 && h <= 65) return 1;
+    return 0;
+  }
+  function face(cx, cy, m) {
+    const mouth = m > 0 ? 'M' + (cx - 4) + ' ' + (cy + 2) + 'Q' + cx + ' ' + (cy + 6.5) + ' ' + (cx + 4) + ' ' + (cy + 2)
+      : m < 0 ? 'M' + (cx - 4) + ' ' + (cy + 5) + 'Q' + cx + ' ' + (cy + 1) + ' ' + (cx + 4) + ' ' + (cy + 5)
+      : 'M' + (cx - 4) + ' ' + (cy + 3.5) + 'H' + (cx + 4);
+    return '<circle cx="' + cx + '" cy="' + cy + '" r="9" fill="none" stroke="' + DIG + '" stroke-width="1.8"/>' +
+      '<circle cx="' + (cx - 3.2) + '" cy="' + (cy - 2.5) + '" r="1.3" fill="' + DIG + '"/>' +
+      '<circle cx="' + (cx + 3.2) + '" cy="' + (cy - 2.5) + '" r="1.3" fill="' + DIG + '"/>' +
+      '<path d="' + mouth + '" fill="none" stroke="' + DIG + '" stroke-width="1.7" stroke-linecap="round"/>';
+  }
+  function ariaFor(r, n) {
+    if (n.loading) return r.name + ': načítám';
+    if (n.t == null && n.h == null) return r.name + ': bez dat';
+    return r.name + ': ' + fmtT(n.t) + ' °C, vlhkost ' + fmtH(n.h) + ' %' + (n.stale ? ', data jsou zastaralá' : '') + '. Otevřít podrobnosti';
+  }
+  function lcdSensor(r, cx, cy, n) {
+    const ts = n.t == null ? '--' : fmtT(n.t);
+    const fs = ts.length >= 5 ? 28 : 34;
+    const m = n.stale ? null : mood(n.t, n.h);
+    let s = '<g class="dev' + (n.stale ? ' stale' : '') + '">';
+    s += '<rect x="' + (cx - 60) + '" y="' + (cy - 48) + '" width="120" height="96" rx="16" fill="#f6f6f3" stroke="#cfcdc6" stroke-width="1.5"/>';
+    s += '<rect x="' + (cx - 52) + '" y="' + (cy - 38) + '" width="104" height="76" rx="8" fill="' + LCDBG + '"/>';
+    s += '<text x="' + (cx - 46) + '" y="' + (cy + 4) + '" font-size="' + fs + '" font-weight="600" fill="' + DIG + '">' + ts + '<tspan font-size="14" dy="-' + Math.round(fs * 0.38) + '" dx="3">°C</tspan></text>';
+    if (m != null) s += face(cx - 36, cy + 22, m);
+    s += '<text x="' + (cx + 46) + '" y="' + (cy + 32) + '" font-size="22" font-weight="600" text-anchor="end" fill="' + DIG + '">' + (n.h == null ? '--' : fmtH(n.h)) + '%</text>';
+    s += '</g>';
+    return s;
+  }
+  function stationDisplay(r, cx, cy, n) {
+    const ts = n.t == null ? '--' : fmtT(n.t);
+    const fs = ts.length >= 5 ? 30 : 38;
+    let s = '<g class="dev' + (n.stale ? ' stale' : '') + '">';
+    s += '<rect x="' + (cx - 75) + '" y="' + (cy - 50) + '" width="150" height="100" rx="12" fill="#1b1c1e" stroke="#3b3d40" stroke-width="1.5"/>';
+    s += '<rect x="' + (cx - 68) + '" y="' + (cy - 43) + '" width="136" height="86" rx="6" fill="#0d0e10"/>';
+    s += '<text x="' + (cx - 58) + '" y="' + (cy + 4) + '" font-size="' + fs + '" font-weight="600" fill="#f0efec">' + ts + '<tspan font-size="15" dy="-' + Math.round(fs * 0.38) + '" dx="3" fill="#c3c2b7">°C</tspan></text>';
+    s += '<text x="' + (cx + 58) + '" y="' + (cy + 34) + '" font-size="24" font-weight="600" text-anchor="end" fill="#9ec5f4">' + (n.h == null ? '--' : fmtH(n.h)) + ' %</text>';
+    s += '</g>';
+    return s;
+  }
+  function roomLabel(x, y, name, n) {
+    const warn = !n.loading && n.stale ? '<tspan class="stale-t" dx="8">⚠ ' + fmtAgeShort(n.age) + '</tspan>' : '';
+    return '<text class="lbl" x="' + x + '" y="' + y + '" text-anchor="middle">' + name + warn + '</text>';
+  }
+  function wrapRoom(r, n, inner, box) {
+    return '<g data-r="' + r.id + '" tabindex="0" role="button" aria-label="' + ariaFor(r, n) + '">' +
+      '<rect class="focusring" x="' + box[0] + '" y="' + box[1] + '" width="' + box[2] + '" height="' + box[3] + '" rx="14"/>' +
+      '<rect x="' + box[0] + '" y="' + box[1] + '" width="' + box[2] + '" height="' + box[3] + '" fill="transparent"/>' +
+      inner + '</g>';
+  }
+
+  function planSVG() {
+    const now = {};
+    ROOMS.forEach((r) => { now[r.id] = roomNow(r); });
+    let s = '<svg viewBox="80 -72 656 828" role="group" aria-label="Půdorys bytu s aktuálními teplotami">';
+
+    // podlahy
+    FLOORS.forEach((f) => {
+      if (f.balcony) { s += '<path d="' + f.d + '" style="fill:var(--balcony)"/>'; return; }
+      if (f.room) {
+        const n = now[f.room];
+        s += '<path class="floor" data-r="' + f.room + '" d="' + f.d + '" style="fill:' + tempFill(n.t, n.stale || n.loading) + '"/>';
+      } else {
+        s += '<path d="' + f.d + '" style="fill:var(--floor)"/>';
+      }
+    });
+    // kuchyňská linka
+    s += '<path d="' + COUNTER + '" style="fill:var(--counter);stroke:var(--counter-line)" stroke-width="2" stroke-linejoin="round"/>';
+
+    // zdi, okna, dveře
+    let rects = '', wins = '', doors = '';
+    WALLS.forEach((w) => { const p = wallParts(w); rects += p.rects; wins += p.wn; doors += p.dr; });
+    s += '<g class="wallg">' + rects + '</g>' + wins + doors;
+
+    // popisky místností bez čidla
+    s += '<text class="lbl sm" text-anchor="middle" transform="rotate(-90 124 144)" x="124" y="144">balkon</text>';
+    s += '<text class="lbl" x="378" y="372" text-anchor="middle">Jídelna</text>';
+    s += '<text class="lbl" x="590" y="306" text-anchor="middle">Kuchyň</text>';
+    s += '<text class="lbl" x="611" y="428" text-anchor="middle">Koupelna + WC</text>';
+    s += '<text class="lbl" x="418" y="620" text-anchor="middle">Chodba</text>';
+
+    // Obývák: hlavní stanice
+    let n = now.obyvak;
+    s += wrapRoom(ROOM_BY_ID.obyvak, n, roomLabel(287, 98, 'Obývák', n) + stationDisplay(ROOM_BY_ID.obyvak, 245, 186, n), [165, 66, 160, 176]);
+    // Pokoj: čidlo
+    n = now.pokoj;
+    s += wrapRoom(ROOM_BY_ID.pokoj, n, roomLabel(570, 98, 'Pokoj', n) + lcdSensor(ROOM_BY_ID.pokoj, 517, 186, n), [452, 66, 130, 176]);
+    // Ložnice: čidlo
+    n = now.loznice;
+    s += wrapRoom(ROOM_BY_ID.loznice, n, lcdSensor(ROOM_BY_ID.loznice, 566, 530, n) + roomLabel(611, 700, 'Ložnice', n), [500, 480, 200, 240]);
+
+    // Venku: čidlo ve štítu u severního okna
+    n = now.venku;
+    const ts = n.t == null ? '--' : fmtT(n.t);
+    const pillCls = n.stale && !n.loading ? ' stale' : '';
+    let out = '<g class="shield">' +
+      '<path d="M-16 6L0 -10L16 6Z" fill="#f6f6f3" stroke="#a9a7a0" stroke-width="1.5" stroke-linejoin="round"/>' +
+      '<rect x="-15" y="8" width="30" height="5" rx="2.5" fill="#f6f6f3" stroke="#a9a7a0" stroke-width="1.5"/>' +
+      '<rect x="-15" y="15" width="30" height="5" rx="2.5" fill="#f6f6f3" stroke="#a9a7a0" stroke-width="1.5"/>' +
+      '<rect x="-15" y="22" width="30" height="5" rx="2.5" fill="#f6f6f3" stroke="#a9a7a0" stroke-width="1.5"/>' +
+      '<rect x="-2.5" y="28" width="5" height="12" fill="#8d8b84"/></g>';
+    s += '<g data-r="venku" tabindex="0" role="button" aria-label="' + ariaFor(ROOM_BY_ID.venku, n) + '" class="pill-g' + pillCls + '">' +
+      '<rect class="focusring" x="362" y="-38" width="276" height="82" rx="16"/>' +
+      '<rect x="362" y="-38" width="276" height="82" fill="transparent"/>' +
+      '<g transform="translate(386 4)" class="dev' + pillCls + '">' + out + '</g>' +
+      '<rect class="pill' + pillCls + '" x="414" y="-32" width="216" height="70" rx="16"/>' +
+      '<text class="pill-l" x="430" y="-8">Venku' + (pillCls ? '<tspan class="stale-t" dx="8">⚠ ' + fmtAgeShort(n.age) + '</tspan>' : '') + '</text>' +
+      '<text class="pill-t" x="430" y="28">' + ts + '<tspan class="pill-u" dx="3">°C</tspan></text>' +
+      '<text class="pill-h" x="616" y="28" text-anchor="end">' + (n.h == null ? '--' : fmtH(n.h)) + ' %</text>' +
+      '</g>';
+
+    // světové strany
+    s += '<g transform="translate(112 -36)" aria-hidden="true">' +
+      '<circle r="18" fill="none" style="stroke:var(--axis)" stroke-width="1.5"/>' +
+      '<path d="M0 -12L6 7L0 3L-6 7Z" style="fill:var(--ink2)"/>' +
+      '<text y="-24" text-anchor="middle" font-size="18" font-weight="600" style="fill:var(--ink2)">S</text></g>';
+
+    s += '</svg>';
+    return s;
+  }
+
+  let lastPlan = '';
+  function renderPlan() {
+    const html = planSVG();
+    if (html === lastPlan) return;
+    const focusId = document.activeElement && document.activeElement.closest && document.activeElement.closest('#plan [data-r]')
+      ? document.activeElement.closest('#plan [data-r]').dataset.r : null;
+    lastPlan = html;
+    $('#plan').innerHTML = html;
+    if (focusId) { const el = document.querySelector('#plan g[data-r="' + focusId + '"]'); if (el) el.focus({ preventScroll: true }); }
+  }
+
+  /* ===== legenda, tabulka, stav ===== */
+  function tabsHTML() {
+    return Object.keys(PERIODS).map((k) =>
       '<button type="button" role="tab" data-p="' + k + '" aria-selected="' + (k === state.period) + '">' + PERIODS[k].label + '</button>'
     ).join('');
+  }
+  function renderToolbar() {
+    $('#tabs').innerHTML = tabsHTML();
+    $('#sheetTabs').innerHTML = tabsHTML();
     $('#legend').innerHTML = ROOMS.map((r) =>
       '<button type="button" data-r="' + r.id + '" aria-pressed="' + (!state.hidden.has(r.id)) + '">' +
       '<span class="dot" style="background:' + r.color + '"></span>' + r.name + '</button>'
@@ -453,9 +771,9 @@
   const hideFns = [];
 
   function niceTicks(lo, hi, n) {
-    let range = hi - lo;
-    if (range <= 0) range = Math.max(Math.abs(hi) * 0.1, 1);
-    const raw = range / (n - 1);
+    let rg = hi - lo;
+    if (rg <= 0) rg = Math.max(Math.abs(hi) * 0.1, 1);
+    const raw = rg / (n - 1);
     const mag = Math.pow(10, Math.floor(Math.log10(raw)));
     const f = raw / mag;
     const step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * mag;
@@ -493,7 +811,7 @@
     return DOW[d.getDay()] + ' ' + d.getDate() + '.' + (d.getMonth() + 1) + '. ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
   }
 
-  function drawChart(host, kind) {
+  function drawChart(host, kind, vis) {
     const pts = state.data[state.period];
     const per = PERIODS[state.period];
     const W = Math.floor(host.clientWidth);
@@ -502,7 +820,6 @@
 
     const isT = kind === 't';
     const idxOf = (r) => (isT ? r.t : r.h);
-    const vis = ROOMS.filter((r) => !state.hidden.has(r.id));
     const fmt = isT ? fmtT : fmtH;
     const unit = isT ? ' °C' : ' %';
     const H = W < 480 ? 220 : 260;
@@ -510,7 +827,6 @@
     const iw = W - m.l - m.r, ih = H - m.t - m.b;
     const t1 = Date.now(), t0 = t1 - per.span;
 
-    // rozsah osy Y
     let lo = Infinity, hi = -Infinity;
     for (const p of pts) {
       if (p.t < t0) continue;
@@ -527,22 +843,19 @@
     const Y = (v) => m.t + ih - ((v - y0) / (y1 - y0)) * ih;
 
     let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="' +
-      (isT ? 'Graf teploty' : 'Graf vlhkosti') + ' za ' + per.label + '. Hodnoty jsou také v tabulce pod grafy.">';
+      (isT ? 'Graf teploty' : 'Graf vlhkosti') + ' za ' + per.label + '. Hodnoty jsou také v tabulce.">';
 
-    // mřížka + popisky osy Y
     ticks.forEach((v) => {
       const y = Y(v);
       svg += '<line x1="' + m.l + '" x2="' + (W - m.r) + '" y1="' + y + '" y2="' + y + '" style="stroke:' + (v === y0 ? 'var(--axis)' : 'var(--grid)') + '" stroke-width="1"/>';
       svg += '<text x="' + (m.l - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="11" style="fill:var(--muted)">' + fmt(v) + '</text>';
     });
-    // osa X
     timeTicks(t0, t1, state.period, W < 480).forEach((tk) => {
       const x = X(tk.t);
       svg += '<line x1="' + x + '" x2="' + x + '" y1="' + (m.t + ih) + '" y2="' + (m.t + ih + 4) + '" style="stroke:var(--axis)" stroke-width="1"/>';
       svg += '<text x="' + x + '" y="' + (H - 6) + '" text-anchor="middle" font-size="11" style="fill:var(--muted)">' + tk.label + '</text>';
     });
 
-    // čáry (s přerušením při výpadku dat)
     const gap = per.step * 4.5;
     vis.forEach((r) => {
       const idx = idxOf(r);
@@ -555,12 +868,12 @@
         else { cur = [[p.t, v]]; segs.push(cur); }
         prevT = p.t;
       }
-      segs.forEach((s) => {
-        if (s.length === 1) {
-          svg += '<circle cx="' + X(s[0][0]) + '" cy="' + Y(s[0][1]) + '" r="2.5" style="fill:' + r.color + '"/>';
+      segs.forEach((sg) => {
+        if (sg.length === 1) {
+          svg += '<circle cx="' + X(sg[0][0]) + '" cy="' + Y(sg[0][1]) + '" r="2.5" style="fill:' + r.color + '"/>';
         } else {
           let d = '';
-          s.forEach((q, i) => { d += (i ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); });
+          sg.forEach((q, i) => { d += (i ? 'L' : 'M') + X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); });
           svg += '<path d="' + d + '" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="stroke:' + r.color + '"/>';
         }
       });
@@ -571,7 +884,6 @@
     svg += '</svg><div class="tip"></div>';
     host.innerHTML = svg;
 
-    // hover / dotyk
     const svgEl = host.querySelector('svg');
     const hv = host.querySelector('.hv');
     const tip = host.querySelector('.tip');
@@ -618,33 +930,97 @@
 
   function renderCharts() {
     hideFns.length = 0;
-    drawChart($('#plotT'), 't');
-    drawChart($('#plotH'), 'h');
+    const vis = ROOMS.filter((r) => !state.hidden.has(r.id));
+    drawChart($('#plotT'), 't', vis);
+    drawChart($('#plotH'), 'h', vis);
+    if (state.sheet) {
+      const r = ROOM_BY_ID[state.sheet];
+      drawChart($('#sheetPlotT'), 't', [r]);
+      drawChart($('#sheetPlotH'), 'h', [r]);
+    }
+  }
+
+  /* ===== detail místnosti ===== */
+  let lastFocus = null;
+  function renderSheet() {
+    if (!state.sheet) return;
+    const r = ROOM_BY_ID[state.sheet];
+    const n = roomNow(r);
+    $('#sheetTitle').textContent = r.name;
+    $('#sheetDot').style.background = r.color;
+    const ageTxt = n.age == null ? (n.loading ? 'Načítám…' : 'bez dat') : fmtAge(n.age);
+    $('#sheetNow').innerHTML =
+      '<span class="big">' + fmtT(n.t) + '<small>°C</small></span>' +
+      '<span class="hum">' + fmtH(n.h) + ' % vlhkost</span>' +
+      '<span class="age' + (n.stale && !n.loading ? ' stale' : '') + '">' + (n.stale && !n.loading ? '⚠ ' : '') + 'Poslední data: ' + ageTxt + '</span>';
+    const per = state.data[state.period];
+    const rt = range(per, r.t), rh = range(per, r.h);
+    const parts = [];
+    if (rt) parts.push('teplota ' + fmtT(rt.lo) + ' až ' + fmtT(rt.hi) + ' °C');
+    if (rh) parts.push('vlhkost ' + fmtH(rh.lo) + ' až ' + fmtH(rh.hi) + ' %');
+    $('#sheetNote').textContent = parts.length ? 'Za ' + PERIODS[state.period].label.toLowerCase() + ': ' + parts.join(' · ') + '.' : '';
+  }
+
+  function openSheet(id, trigger) {
+    if (!ROOM_BY_ID[id]) return;
+    state.sheet = id;
+    lastFocus = trigger || null;
+    $('#sheet').hidden = false;
+    document.body.style.overflow = 'hidden';
+    renderToolbar();
+    renderSheet();
+    renderCharts();
+    $('#sheetClose').focus({ preventScroll: true });
+    if (!state.data[state.period]) switchPeriod(state.period);
+  }
+  function closeSheet() {
+    if (!state.sheet) return;
+    const id = state.sheet;
+    state.sheet = null;
+    $('#sheet').hidden = true;
+    document.body.style.overflow = '';
+    const el = document.querySelector('#plan g[data-r="' + id + '"]');
+    if (el) el.focus({ preventScroll: true });
   }
 
   function render() {
     renderStatus();
+    renderPlan();
     renderToolbar();
-    renderCards();
     renderCharts();
     renderTable();
+    renderSheet();
   }
 
   /* ===== události ===== */
-  $('#tabs').addEventListener('click', (e) => {
+  function onTabs(e) {
     const b = e.target.closest('button[data-p]');
     if (b && b.dataset.p !== state.period) switchPeriod(b.dataset.p);
-  });
+  }
+  $('#tabs').addEventListener('click', onTabs);
+  $('#sheetTabs').addEventListener('click', onTabs);
   $('#legend').addEventListener('click', (e) => {
     const b = e.target.closest('button[data-r]');
     if (!b) return;
     const id = b.dataset.r;
     if (state.hidden.has(id)) state.hidden.delete(id);
-    else if (ROOMS.length - state.hidden.size > 1) state.hidden.add(id);   // aspoň jedna musí zůstat
+    else if (ROOMS.length - state.hidden.size > 1) state.hidden.add(id);
     store.set('ms.hidden', Array.from(state.hidden));
     renderToolbar();
     renderCharts();
   });
+  $('#plan').addEventListener('click', (e) => {
+    const el = e.target.closest('[data-r]');
+    if (el) openSheet(el.dataset.r, el);
+  });
+  $('#plan').addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const el = e.target.closest('g[data-r]');
+    if (el) { e.preventDefault(); openSheet(el.dataset.r, el); }
+  });
+  $('#sheetClose').addEventListener('click', closeSheet);
+  $('#sheetBackdrop').addEventListener('click', closeSheet);
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
   $('#refreshBtn').addEventListener('click', refresh);
   $('#themeBtn').addEventListener('click', () => {
     const order = ['auto', 'light', 'dark'];
@@ -656,14 +1032,17 @@
   document.addEventListener('pointerdown', (e) => { if (!e.target.closest('.plot')) hideFns.forEach((f) => f()); });
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible' && (!state.updated || Date.now() - state.updated > MIN)) refresh();
-    renderCards();
+    renderPlan();
+    renderSheet();
   });
 
   let raf = 0;
-  new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderCharts); }).observe($('.charts'));
+  const ro = new ResizeObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(renderCharts); });
+  ro.observe($('.charts'));
+  ro.observe($('.panel'));
 
   setInterval(refresh, CONFIG.refreshMs);
-  setInterval(renderCards, 30 * 1000);   // aktualizace „před X min“
+  setInterval(() => { renderPlan(); renderSheet(); }, 30 * 1000);
 
   /* ===== start ===== */
   $('#chId').textContent = CONFIG.channelId;

@@ -604,11 +604,14 @@
     if (n.t == null && n.h == null) return r.name + ': bez dat';
     return r.name + ': ' + fmtT(n.t) + ' °C, vlhkost ' + fmtH(n.h) + ' %' + (n.stale ? ', data jsou zastaralá' : '') + '. Otevřít podrobnosti';
   }
-  function lcdSensor(r, cx, cy, n) {
+  function sc(cx, cy, k) {
+    return ' transform="translate(' + cx + ' ' + cy + ') scale(' + k + ') translate(' + (-cx) + ' ' + (-cy) + ')"';
+  }
+  function lcdSensor(r, cx, cy, n, k) {
     const ts = n.t == null ? '--' : fmtT(n.t);
     const fs = ts.length >= 5 ? 28 : 34;
     const m = n.stale ? null : mood(n.t, n.h);
-    let s = '<g class="dev' + (n.stale ? ' stale' : '') + '">';
+    let s = '<g class="dev' + (n.stale ? ' stale' : '') + '"' + sc(cx, cy, k || 1) + '>';
     s += '<rect x="' + (cx - 60) + '" y="' + (cy - 48) + '" width="120" height="96" rx="16" fill="#f6f6f3" stroke="#cfcdc6" stroke-width="1.5"/>';
     s += '<rect x="' + (cx - 52) + '" y="' + (cy - 38) + '" width="104" height="76" rx="8" fill="' + LCDBG + '"/>';
     s += '<text x="' + (cx - 46) + '" y="' + (cy + 4) + '" font-size="' + fs + '" font-weight="600" fill="' + DIG + '">' + ts + '<tspan font-size="14" dy="-' + Math.round(fs * 0.38) + '" dx="3">°C</tspan></text>';
@@ -617,10 +620,10 @@
     s += '</g>';
     return s;
   }
-  function stationDisplay(r, cx, cy, n) {
+  function stationDisplay(r, cx, cy, n, k) {
     const ts = n.t == null ? '--' : fmtT(n.t);
     const fs = ts.length >= 5 ? 30 : 38;
-    let s = '<g class="dev' + (n.stale ? ' stale' : '') + '">';
+    let s = '<g class="dev' + (n.stale ? ' stale' : '') + '"' + sc(cx, cy, k || 1) + '>';
     s += '<rect x="' + (cx - 75) + '" y="' + (cy - 50) + '" width="150" height="100" rx="12" fill="#1b1c1e" stroke="#3b3d40" stroke-width="1.5"/>';
     s += '<rect x="' + (cx - 68) + '" y="' + (cy - 43) + '" width="136" height="86" rx="6" fill="#0d0e10"/>';
     s += '<text x="' + (cx - 58) + '" y="' + (cy + 4) + '" font-size="' + fs + '" font-weight="600" fill="#f0efec">' + ts + '<tspan font-size="15" dy="-' + Math.round(fs * 0.38) + '" dx="3" fill="#c3c2b7">°C</tspan></text>';
@@ -628,9 +631,9 @@
     s += '</g>';
     return s;
   }
-  function roomLabel(x, y, name, n) {
+  function roomLabel(x, y, name, n, anchor) {
     const warn = !n.loading && n.stale ? '<tspan class="stale-t" dx="8">⚠ ' + fmtAgeShort(n.age) + '</tspan>' : '';
-    return '<text class="lbl" x="' + x + '" y="' + y + '" text-anchor="middle">' + name + warn + '</text>';
+    return '<text class="lbl" x="' + x + '" y="' + y + '" text-anchor="' + (anchor || 'middle') + '">' + name + warn + '</text>';
   }
   function wrapRoom(r, n, inner, box) {
     return '<g data-r="' + r.id + '" tabindex="0" role="button" aria-label="' + ariaFor(r, n) + '">' +
@@ -671,13 +674,13 @@
 
     // Obývák: hlavní stanice
     let n = now.obyvak;
-    s += wrapRoom(ROOM_BY_ID.obyvak, n, roomLabel(287, 98, 'Obývák', n) + stationDisplay(ROOM_BY_ID.obyvak, 245, 186, n), [165, 66, 160, 176]);
+    s += wrapRoom(ROOM_BY_ID.obyvak, n, roomLabel(172, 80, 'Obývák', n, 'start') + stationDisplay(ROOM_BY_ID.obyvak, 288, 170, n, 1.4), [180, 94, 216, 148]);
     // Pokoj: čidlo
     n = now.pokoj;
-    s += wrapRoom(ROOM_BY_ID.pokoj, n, roomLabel(570, 98, 'Pokoj', n) + lcdSensor(ROOM_BY_ID.pokoj, 517, 186, n), [452, 66, 130, 176]);
+    s += wrapRoom(ROOM_BY_ID.pokoj, n, roomLabel(432, 76, 'Pokoj', n, 'start') + lcdSensor(ROOM_BY_ID.pokoj, 566, 160, n, 1.55), [468, 84, 196, 154]);
     // Ložnice: čidlo
     n = now.loznice;
-    s += wrapRoom(ROOM_BY_ID.loznice, n, lcdSensor(ROOM_BY_ID.loznice, 566, 530, n) + roomLabel(611, 700, 'Ložnice', n), [500, 480, 200, 240]);
+    s += wrapRoom(ROOM_BY_ID.loznice, n, lcdSensor(ROOM_BY_ID.loznice, 611, 578, n, 1.6) + roomLabel(611, 712, 'Ložnice', n), [510, 496, 200, 160]);
 
     // Venku: čidlo ve štítu u severního okna
     n = now.venku;
@@ -689,7 +692,7 @@
       '<rect x="-15" y="15" width="30" height="5" rx="2.5" fill="#f6f6f3" stroke="#a9a7a0" stroke-width="1.5"/>' +
       '<rect x="-15" y="22" width="30" height="5" rx="2.5" fill="#f6f6f3" stroke="#a9a7a0" stroke-width="1.5"/>' +
       '<rect x="-2.5" y="28" width="5" height="12" fill="#8d8b84"/></g>';
-    s += '<g data-r="venku" tabindex="0" role="button" aria-label="' + ariaFor(ROOM_BY_ID.venku, n) + '" class="pill-g' + pillCls + '">' +
+    s += '<g data-r="venku" tabindex="0" role="button" aria-label="' + ariaFor(ROOM_BY_ID.venku, n) + '" class="pill-g' + pillCls + '"' + sc(390, 42, 1.2) + '>' +
       '<rect class="focusring" x="362" y="-38" width="276" height="82" rx="16"/>' +
       '<rect x="362" y="-38" width="276" height="82" fill="transparent"/>' +
       '<g transform="translate(386 4)" class="dev' + pillCls + '">' + out + '</g>' +
